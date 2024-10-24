@@ -20,10 +20,11 @@ app.use(express.urlencoded({ extended: true }));
 const connectToMongoDB = async () => {
   const username = process.env.MONGO_USERNAME; // Get MongoDB username from .env
   const password = encodeURIComponent(process.env.MONGO_PASSWORD); // Get MongoDB password from .env
+  const dbName = process.env.MONGO_DB_NAME; // Get MongoDB database name from .env
 
   try {
     await mongoose.connect(
-      `mongodb+srv://${username}:${password}@cluster0.bbhnx.mongodb.net/ecommerce?retryWrites=true&w=majority&appName=Cluster0`
+      `mongodb+srv://${username}:${password}@cluster0.bbhnx.mongodb.net/${dbName}?retryWrites=true&w=majority&appName=Cluster0`
     );
     console.log('Connected to MongoDB');
   } catch (error) {
