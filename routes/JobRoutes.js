@@ -1,74 +1,76 @@
-import express from 'express';
-import nodemailer from 'nodemailer';
-import Job from '../models/Job.js';  // Import the Job model
-import dotenv from 'dotenv';
+import express from "express";
+import dotenv from "dotenv";
+import Job from "../models/Job.js";
 
 dotenv.config();
 
 const router = express.Router();
 
-// Route to get all jobs
-router.get('/', async (req, res) => {
-  try {
-    const jobs = await Job.find();  // Fetch all jobs from MongoDB
-    console.log('Fetched all jobs:', jobs); // Logging the jobs fetched from the database
-    res.json(jobs);
-  } catch (error) {
-    console.error('Error fetching jobs:', error); // Log any errors in fetching jobs
-    res.status(500).json({ message: 'Error fetching jobs' });
-  }
+// Route to get all mails.
+router.get("/", async (req, res) => {
+    try {
+        const jobs = await Job.find();
+        res.json(jobs);
+    } catch (error) {
+        console.log("Error fetching jobs:", error);
+        res.status(500).json({ error: "Error fetching jobs" });
+    }
 });
 
-// Route to send emails to selected companies
-router.post('/send-mails', async (req, res) => {
-  const { emails } = req.body;
+// Route to add a new mail.
+router.post("/addMail", async (req, res) => {
+    try {
+        const alreadyExistsMail = await Job.find({ email: req.body.email });
 
-  // Log received emails
-  console.log('Received email list from frontend:', emails);
+        if (alreadyExistsMail.length > 0) {
+            return res.status(400).json({ error: "Email already exists." });
+        }
 
-  if (!emails || emails.length === 0) {
-    console.error('No emails provided by the frontend.');
-    return res.status(400).json({ message: 'No emails provided' });
-  }
-
-  try {
-    // Log that we're preparing to send emails
-    console.log('Preparing to send emails...');
-
-    // Configure the nodemailer transport
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: {
-        user: 'darlene.pacocha26@ethereal.email',
-        pass: 'rr9whTxHAUpe3sUVyf',
-      },
-    });
-
-    // Loop through the emails and send each one
-    for (let email of emails) {
-      console.log(`Sending email to: ${email}`);
-
-      const mailOptions = {
-        from: '"Aastha Modi" <missaastha11@gmail.com>',
-        to: email,
-        subject: 'Application for MERN Stack Developer Role',
-        text: 'Hi there, I am interested in the MERN Stack Developer position...',
-        html: '<p>Hi there, I am interested in the MERN Stack Developer position...</p>',
-      };
-
-      // Send the email using nodemailer
-      await transporter.sendMail(mailOptions);
-      console.log(`Email sent to ${email} successfully.`);
+        const data = new Job(req.body);
+        await data.save();
+        res.json({
+            message: "Data sent successfully",
+            data: data,
+        });
+    } catch (error) {
+        res.status(500).json({ error: error });
     }
+});
 
-    // Send success response
-    res.status(200).json({ message: 'Emails sent successfully!' });
-  } catch (error) {
-    console.error('Error sending emails:', error); // Log error details in the backend
-    res.status(500).json({ message: 'Error sending emails', error: error.message });
-  }
+// Route to delete a mail.
+router.post("/deleteMail", async (req, res) => {
+    const alreadyExistsMail = await Job.find({ email: req.body.email });
+
+    if (!(alreadyExistsMail.length > 0)) {
+        return res.status(400).json({ error: "Email does not exists." });
+    }
+    
+    try {
+        await Job.findOneAndDelete({ email: req.body.email });
+        res.json({
+            message: "Deleted successfully",
+        });
+    } catch (error) {
+        res.status(500).json({ error: error });
+    }
+});
+
+// Route to update a mail.
+router.post("/updateMail", async (req, res) => {
+    const alreadyExistsMail = await Job.find({ email: req.body.email });
+
+    if (!(alreadyExistsMail.length > 0)) {
+        return res.status(400).json({ error: "Email does not exists." });
+    }
+    
+    try {
+        await Job.findOneAndUpdate({ email: req.body.email }, req.body);
+        res.json({
+            message: "Updated successfully",
+        });
+    } catch (error) {
+        res.status(500).json({ error: error });
+    }
 });
 
 export default router;
